@@ -15,7 +15,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
-
 class Bot:
     def __init__(self):
         self.base_url = config.BASE_URL
@@ -101,10 +100,7 @@ class Bot:
             except Exception as e:
                 logging.error(e)
             time.sleep(config.interval)
-
-> ChatGPT | Марти 🦓:
-
-
+            
 if __name__ == '__main__':
     bot = Bot()
     bot.run(currency_pair=config.currency_pair)

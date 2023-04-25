@@ -48,3 +48,24 @@ def rsi(data, period=14):
     # рассчитываем RSI
     rsi = 100.0 - (100.0 / (1.0 + rs))
     return rsi
+python
+
+def macd(data, slow=26, fast=12, signal=9):
+    """
+    Вычисление Moving Average Convergence/Divergence (MACD) для данных
+
+    :param data: данные для вычисления (например, список цен закрытия биржевых сделок)
+
+    :type data: list[float]
+
+    :param slow: период для вычисления медленной скользящей средней
+
+    :type slow: int
+
+    :param fast: период для вычисления быстрой скользящей средней
+
+    :type fast: int
+
+    :param signal: период для вычисления сигнальной линии
+
+    :type

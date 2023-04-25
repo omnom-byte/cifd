@@ -83,7 +83,7 @@ class Bot:
             elif rsi_value <= config.RSI_OVERSOLD and macd_value > macd_signal and latest_price >= bb_upper:
                 self.balance = self.place_order(symbol, 'SELL', latest_price, self.balance)
 
-    def check_balance(self):
+    def get_balances(self):
     balances = self.exchange.get_balances()
     self.balance = float(balances['BTC']['free'])
     print("Your current balance is: ", self.balance)
@@ -93,12 +93,10 @@ class Bot:
             if self.wallet['USD'] > 0:
                 amount_to_buy = self.wallet['USD'] / price
                 self.exchange.place_order(symbol, 'BUY', amount_to_buy, price)
-                self.get_wallet()
                 self.log_trade(symbol, 'BUY', price, amount_to_buy)
         elif order_type == 'SELL':
             if self.wallet[symbol] > 0:
                 self.exchange.place_order(symbol, 'SELL', self.wallet[symbol], price)
-                self.get_wallet()
                 self.log_trade(symbol, 'SELL', price, self.wallet[symbol])
 
     def log_trade(self, symbol, order_type, price, amount):

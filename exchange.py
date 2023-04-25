@@ -80,29 +80,38 @@ class Exchange():
     # Осталось просто вернуть их
     return 200, ohlcv
 
-def create_order(self, currency_pair: str, order_type: str, amount: float, price: float):
+def create_order(self, currency_pair: str, side: str) -> Union[int, Dict[str, Any]]:
     """
-    Метод для создания ордера на покупку или продажу валюты
+    Метод для создания ордеров на бирже
 
     :param currency_pair: Пара валют, для которой создается ордер
     :type currency_pair: str
 
-    :param order_type: Тип ордера ('buy' или 'sell')
-    :type order_type: str
+    :param side: Направление ордера ('buy' или 'sell')
+    :type side: str
 
-    :param amount: Количество валюты для покупки/продажи
-    :type amount: float
-
-    :param price: Цена за единицу валюты
-    :type price: float
-
-    :return: ID ордера, если его удалось создать; None в случае ошибки
-    :rtype: int or None
+    :return: код ответа биржи (например, 200) и JSON с ответом в случае успеха, либо код ошибки в случае неудачи
+    :rtype: Union[int, Dict[str, Any]]
     """
-
-    # Реализация метода здесь
-    pass
-
+    url = f"{self.base_url}/order"
+    order_type = "market"  # тип ордера (маркет или лимит)
+    amount = 0.1  # кол-во криптовалюты, которое нужно купить/продать
+    data = {
+        "market_name": currency_pair,
+        "direction": side,
+        "type": order_type,
+        "amount": amount
+    }
+    headers = {
+        "Authorization": f"Bearer {self.api_key}",
+        "Content-Type": "application/json"
+    }
+    response = requests.post(url, headers=headers, json=data)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return response.status_code
+    
     def get_order_status(self, currency_pair, order_id):
         """
         Метод получения состояния ордера на бирже

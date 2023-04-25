@@ -69,7 +69,32 @@ class Bot:
                         self.place_order(symbol, 'BUY', latest_price)
                     elif rsi_value <= config.RSI_OVERSOLD and macd_value > macd_signal and latest_price >= bb_upper:
                         self.place_order(symbol, 'SELL', latest_price)
-            time.sleep(self.interval)    
+            time.sleep(self.interval)
+            
+    def place_order(self, symbol, order_type, price):
+    if order_type == 'BUY':
+        available_amount = self.check_balance() / price
+        self.exchange.place_order(symbol, 'BUY', available_amount, price)
+        self.log_trade(symbol, 'BUY', price, available_amount)
+    elif order_type == 'SELL':
+        available_amount = self.check_balance(symbol)
+        self.exchange.place_order(symbol, 'SELL', available_amount, price)
+        self.log_trade(symbol, 'SELL', price, available_amount)
+   
+    def fetch_ohlcv(self, symbol, timeframe):
+        candles = self.exchange.get_candles(symbol=symbol, timeframe=timeframe)
+        df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+        df['symbol'] = symbol
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+        df = df.set_index('timestamp')
+        return df
+      
+      def fetch_tickers(self, symbols):
+        tickers = self.exchange.get_tickers(symbols=symbols)
+        df = pd.DataFrame(tickers, columns=['symbol', 'bid', 'ask'])
+        df['timestamp'] = datetime.now(pytz.timezone(config.TIMEZONE))
+        df = df.set_index('symbol')
+        return df
             
             def backtest(self, df):
         for i in range(self.df.shape[0] - 1):
@@ -87,17 +112,6 @@ class Bot:
     balances = self.exchange.get_balances()
     self.balance = float(balances['BTC']['free'])
     print("Your current balance is: ", self.balance)
-
-    def place_order(self, symbol, order_type, price):
-        if order_type == 'BUY':
-            if self.wallet['USD'] > 0:
-                amount_to_buy = self.wallet['USD'] / price
-                self.exchange.place_order(symbol, 'BUY', amount_to_buy, price)
-                self.log_trade(symbol, 'BUY', price, amount_to_buy)
-        elif order_type == 'SELL':
-            if self.wallet[symbol] > 0:
-                self.exchange.place_order(symbol, 'SELL', self.wallet[symbol], price)
-                self.log_trade(symbol, 'SELL', price, self.wallet[symbol])
 
     def log_trade(self, symbol, order_type, price, amount):
         api.log_trade(symbol, order_type, price, amount)

@@ -29,43 +29,6 @@ class Bot:
         else:
             self.df = pd.DataFrame()
         self.bot_start_time = time.time()
-
-     def backtest(self):
-        data = read_data("data.json")
-        self.signals.reset()
-        for i in range(len(data)):
-            signal = Signal()
-            signal.symbol = self.symbol
-            signal.price = data[i]["close"]
-            signal.time = data[i]["time"]
-            if self.signals.last_signal() is not None:
-                self.signals.last_signal().close_time = signal.time
-            check_signal = signal.copy()
-
-            if self.strategy == "rsi":
-                check_signal.data = (data[:i], self.rsi_period, self.rsi_upper, self.rsi_lower)
-                check_signal.conditions.append(self.strategies["rsi"]["enter"])
-                check_signal.conditions.append(self.strategies["rsi"]["exit"])
-            elif self.strategy == "macd":
-                check_signal.data = (data[:i], self.macd_fast, self.macd_slow, self.macd_signal)
-                check_signal.conditions.append(self.strategies["macd"]["enter"])
-                check_signal.conditions.append(self.strategies["macd"]["exit"])
-            elif self.strategy == "bb":
-                check_signal.data = (data[:i], self.bb_period, self.bb_dev_factor)
-                check_signal.conditions.append(self.strategies["bb"]["enter"])
-                check_signal.conditions.append(self.strategies["bb"]["exit"])
-            self.signals.add_signal(signal)
-            if not self.signals.check_conditions(check_signal):
-                self.signals.remove_last_signal()
-
-        self.write_to_sheet()
-        return self.signals.summary()
-      
-    def write_to_sheet(self):
-        if self.sheet_id:
-            values = [
-                [datetime.now().strftime("%d/%m/%Y %H:%M:%S"), self.get_balance(), self.run_count, self.get_trades_count(),
-                 self.get_profit_loss(), self.get_profit_loss_rate(), self.signals.all_signals_count(),
     
     def run(self):
         logging.info('Bot started at {}'.format(datetime.now(pytz.timezone(config.TIMEZONE)).strftime('%Y-%m-%d %H:%M:%S')))
@@ -106,13 +69,20 @@ class Bot:
                         self.place_order(symbol, 'BUY', latest_price)
                     elif rsi_value <= config.RSI_OVERSOLD and macd_value > macd_signal and latest_price >= bb_upper:
                         self.place_order(symbol, 'SELL', latest_price)
-            time.sleep(self.interval)           
+            time.sleep(self.interval)    
+            
+            def backtest(self, df):
+        for i in range(self.df.shape[0] - 1):
+            symbol_df = self.df.iloc[i:i+self.period]
+             rsi_value = self.indicators.rsi(symbol_df['close'].values, self.period)
+            macd_value, macd_signal = self.indicators.macd(symbol_df['close'].values, self.period)
+            bb_bands = self.indicators.bollinger_bands(symbol_df['close'].values, self.period)
+            bb_upper, bb_middle, bb_lower = bb_bands[0][-1], bb_bands[1][-1], bb_bands[2][-1]
+            if rsi_value >= config.RSI_OVERBOUGHT and macd_value < macd_signal and latest_price <= bb_lower and self.balance > 0:
+                self.balance = self.place_order(symbol, 'BUY', latest_price, self.balance)
+            elif rsi_value <= config.RSI_OVERSOLD and macd_value > macd_signal and latest_price >= bb_upper:
+                self.balance = self.place_order(symbol, 'SELL', latest_price, self.balance)
 
-    def get_wallet(self):
-        wallet = self.exchange.get_wallet()
-        self.wallet = wallet
-        return wallet
-      
     def check_balance(self):
     balances = self.exchange.get_balances()
     self.balance = float(balances['BTC']['free'])

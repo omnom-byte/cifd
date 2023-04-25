@@ -42,7 +42,7 @@ class Exchange():
                                     auth=(self.api_key, self.secret_key))
         return response.json()
     
-     def get_data(self, currency_pair: str, time_interval: int):
+   def get_data(self, currency_pair: str, time_interval: int) -> Tuple[int, Dict[str, Any]]:
     """
     Метод для получения котировок из биржи за определенный временной интервал
 
@@ -54,7 +54,24 @@ class Exchange():
 
     :return: данные
     :rtype: код ответа биржи (например, 200) и JSON с ответом в случае успеха
-    """
+    """ 
+    try:
+        # реализация получения данных от биржи с использованием ccxt
+        exchange = ccxt.exchange_name({
+            'apiKey': self.api_key,
+            'secret': self.secret_key
+            })  # Пример: exmo_exchange = ccxt.exmo({'apiKey': 'YOUR_PUBLIC_API_KEY', 'secret': 'YOUR_SECRET_PRIVATE_KEY'})
+
+        # Отправляем запрос к бирже
+        response = exchange.fetch_ohlcv(currency_pair, timeframe='1m', limit=10)
+        
+        # Обрабатываем ответ от биржи
+        if response:
+            return 200, {'response': response}  # Пример: {'response': [[1618076880000, 58471.3, 58480.3, 58471.3, 58480.3, 0.45576]]}
+        else:
+            return 400, {'response': 'Empty response from exchange'}
+    except Exception as e:
+        return 500, {'response': str(e)}
 
     binance = ccxt.binance()
     ohlcv = binance.fetch_ohlcv(currency_pair, time_interval)

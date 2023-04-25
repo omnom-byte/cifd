@@ -47,6 +47,9 @@ class Bot:
             self.df = pd.concat([self.df, pd.DataFrame(candles)])
             self.df = self.df.drop_duplicates(subset=['timestamp'], keep='first')
             self.df = self.df.sort_values(by='timestamp')
+            self.check_balance()
+            if self.backtest:
+            backtest_res = self.backtest()
             for symbol in config.PAIRS:
                 try:
                     symbol_df = self.df[self.df['symbol'] == symbol]
@@ -67,6 +70,11 @@ class Bot:
                     elif rsi_value <= config.RSI_OVERSOLD and macd_value > macd_signal and latest_price >= bb_upper:
                         self.place_order(symbol, 'SELL', latest_price)
             time.sleep(self.interval)
+            
+    def check_balance(self):
+        balances = self.exchange.get_balances()
+        self.balance = float(balances['BTC']['free'])
+        print("Your current balance is: ", self.balance)
 
     def get_wallet(self):
         wallet = self.exchange.get_wallet()

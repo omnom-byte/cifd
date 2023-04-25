@@ -1,4 +1,5 @@
 python
+import ccxt
 import requests
 import base64
 import hashlib
@@ -40,20 +41,50 @@ class Exchange():
                                     data=params,
                                     auth=(self.api_key, self.secret_key))
         return response.json()
+    
+     def get_data(self, currency_pair: str, time_interval: int):
+    """
+    Метод для получения котировок из биржи за определенный временной интервал
 
-    def get_data(self, currency_pair, interval):
-        """
-        Метод получения данных с биржи
-        """
-        # реализация получения данных
-        return []
+    :param currency_pair: Пара валют, для которой запрашиваем котировки
+    :type currency_pair: str
 
-    def create_order(self, currency_pair, order_type):
-        """
-        Метод создания ордера на бирже
-        """
-        # реализация создания ордера
-        return {}
+    :param time_interval: Интервал времени
+    :type time_interval: int
+
+    :return: данные
+    :rtype: код ответа биржи (например, 200) и JSON с ответом в случае успеха
+    """
+
+    binance = ccxt.binance()
+    ohlcv = binance.fetch_ohlcv(currency_pair, time_interval)
+
+    # Теперь данные, полученные с биржи, хранятся в переменной ohlcv
+    # Осталось просто вернуть их
+    return 200, ohlcv
+
+def create_order(self, currency_pair: str, order_type: str, amount: float, price: float):
+    """
+    Метод для создания ордера на покупку или продажу валюты
+
+    :param currency_pair: Пара валют, для которой создается ордер
+    :type currency_pair: str
+
+    :param order_type: Тип ордера ('buy' или 'sell')
+    :type order_type: str
+
+    :param amount: Количество валюты для покупки/продажи
+    :type amount: float
+
+    :param price: Цена за единицу валюты
+    :type price: float
+
+    :return: ID ордера, если его удалось создать; None в случае ошибки
+    :rtype: int or None
+    """
+
+    # Реализация метода здесь
+    pass
 
     def get_order_status(self, currency_pair, order_id):
         """

@@ -29,6 +29,20 @@ class Bot:
         else:
             self.df = pd.DataFrame()
         self.bot_start_time = time.time()
+        
+    def initialize(self):
+    logging.info('Bot initializing...')
+    self.bot_start_time = time.time()
+    self.df = pd.DataFrame(columns=['timestamp', 'symbol', 'open', 'high', 'low', 'close', 'volume', 'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore'])
+    self.interval = config.INTERVAL
+    self.period = config.PERIOD
+    self.exchange = Exchange(config.API_KEY, config.API_SECRET)
+    self.indicators = Indicators()
+    self.wallet = self.get_wallet()
+    self.google_sheets = GoogleSheetsAPI(config.GOOGLE_SHEETS_CREDS_FILE, config.SPREADSHEET_NAME)
+    self.get_google_sheets_data()
+    self.check_balance()
+    self.backtest = config.BACKTEST
     
     def run(self):
         logging.info('Bot started at {}'.format(datetime.now(pytz.timezone(config.TIMEZONE)).strftime('%Y-%m-%d %H:%M:%S')))
@@ -81,20 +95,24 @@ class Bot:
         self.exchange.place_order(symbol, 'SELL', available_amount, price)
         self.log_trade(symbol, 'SELL', price, available_amount)
    
-    def fetch_ohlcv(self, symbol, timeframe):
-        candles = self.exchange.get_candles(symbol=symbol, timeframe=timeframe)
+    def fetch_ohlcv(self, symbol, interval, limit):
+        candles = self.exchange.fetch_ohlcv(symbol, interval=interval, limit=limit)
         df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-        df['symbol'] = symbol
-        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-        df = df.set_index('timestamp')
+        df['date'] = pd.to_datetime(df['timestamp'], unit='ms')
+        df.set_index('date', inplace=True)
+        df = df[['open', 'high', 'low', 'close', 'volume']]
+        df = df.astype(float)
         return df
       
-      def fetch_tickers(self, symbols):
-        tickers = self.exchange.get_tickers(symbols=symbols)
-        df = pd.DataFrame(tickers, columns=['symbol', 'bid', 'ask'])
-        df['timestamp'] = datetime.now(pytz.timezone(config.TIMEZONE))
-        df = df.set_index('symbol')
-        return df
+     def fetch_tickers(self):
+        tickers = self.exchange.fetch_tickers()
+        result = {}
+        for pair in tickers:
+            result[pair] = {
+                'bid': tickers[pair]['bid'],
+                'ask': tickers[pair]['ask']
+            }
+        return result
             
             def backtest(self, df):
         for i in range(self.df.shape[0] - 1):

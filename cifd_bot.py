@@ -47,7 +47,7 @@ class Bot:
             self.df = pd.concat([self.df, pd.DataFrame(candles)])
             self.df = self.df.drop_duplicates(subset=['timestamp'], keep='first')
             self.df = self.df.sort_values(by='timestamp')
-            self.check_balance()
+            self.get_balances()
             if self.backtest:
             backtest_res = self.backtest()
             for symbol in config.PAIRS:
@@ -73,11 +73,11 @@ class Bot:
             
     def place_order(self, symbol, order_type, price):
     if order_type == 'BUY':
-        available_amount = self.check_balance() / price
+        available_amount = self.get_balances() / price
         self.exchange.place_order(symbol, 'BUY', available_amount, price)
         self.log_trade(symbol, 'BUY', price, available_amount)
     elif order_type == 'SELL':
-        available_amount = self.check_balance(symbol)
+        available_amount = self.get_balances(symbol)
         self.exchange.place_order(symbol, 'SELL', available_amount, price)
         self.log_trade(symbol, 'SELL', price, available_amount)
    
